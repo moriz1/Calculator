@@ -52,6 +52,7 @@ public class CalculatorLogic : MonoBehaviour {
 				ToRPN();
 
 				double answer = Calculate();
+
 				HistoryBox.text = HistoryBox.text + InputBox.text + "\n" + "= " + answer + "\n";
 				InputBox.text = string.Empty + answer;
 
@@ -83,7 +84,7 @@ public class CalculatorLogic : MonoBehaviour {
 					HistoryBox.text = HistoryBox.text + currentInputToken + t.text;
 					InputQueue.Enqueue(t.text);
 				}
-				
+
 				InputQueue.Enqueue(currentInputToken);
 				currentInputToken = string.Empty;
 				InputBox.text = DefaultInputBoxText;
@@ -139,6 +140,7 @@ public class CalculatorLogic : MonoBehaviour {
 
 			if (IsOperator(token)) {
 				while ((SymbolStack.Count > 0) && IsOperator(SymbolStack.Peek())) {
+					Debug.Log(IsLessThanOrEqualPrecedence());
 					//since all supported operators are left associative, i'm going to skip the associative check
 					if (IsLessThanOrEqualPrecedence()) {
 						OutputQueue.Enqueue(SymbolStack.Pop());
@@ -164,6 +166,10 @@ public class CalculatorLogic : MonoBehaviour {
 			}
 		}
 
+		foreach (string s in SymbolStack) {
+			Debug.Log(s);
+		}
+
 		while (SymbolStack.Count > 0) {
 			OutputQueue.Enqueue(SymbolStack.Pop());
 		}
@@ -172,8 +178,8 @@ public class CalculatorLogic : MonoBehaviour {
 	private double Calculate() {
 		Stack<string> calcStack = new Stack<string> ();
 		string token;
-		Debug.Log (OutputQueue.Count);
-		foreach (string s in OutputQueue) {
+
+		foreach (string s in SymbolStack) {
 			Debug.Log(s);
 		}
 
