@@ -20,6 +20,8 @@ public class CalculatorLogic : MonoBehaviour {
 
 	private string currentInputToken;
 
+	private bool equalPressed = false;
+
 	void Start() {
 		if (InputBox.gameObject != null) {
 			InputBox.text = DefaultInputBoxText;
@@ -59,6 +61,8 @@ public class CalculatorLogic : MonoBehaviour {
 
 				currentInputToken = answer.ToString();
 				InputQueue.Enqueue(currentInputToken);
+
+				equalPressed = true;
 			}
 		}
 		else {
@@ -72,14 +76,19 @@ public class CalculatorLogic : MonoBehaviour {
 			case "(":
 			case ")":
 				if (t.text == "SUBSTRACT") {
-					t.text = "-";
+					HistoryBox.text = HistoryBox.text + currentInputToken + "-";
+					InputQueue.Enqueue("-");
 				}
-
-				HistoryBox.text = HistoryBox.text + currentInputToken + t.text;
-
+				else {
+					HistoryBox.text = HistoryBox.text + currentInputToken + t.text;
+					InputQueue.Enqueue(t.text);
+				}
+				
 				InputQueue.Enqueue(currentInputToken);
-				InputQueue.Enqueue(t.text);
 				currentInputToken = string.Empty;
+				InputBox.text = DefaultInputBoxText;
+
+				equalPressed = false;
 				break;
 
 			case "+/-":
@@ -103,6 +112,12 @@ public class CalculatorLogic : MonoBehaviour {
 				HistoryBox.text = string.Empty;
 				break;
 			default:
+				if (equalPressed) {
+					InputQueue.Clear();
+					currentInputToken = DefaultInputBoxText;
+					InputBox.text = DefaultInputBoxText;
+				}
+
 				if ((currentInputToken.Length == 1) && (currentInputToken.StartsWith("0"))) {
 					currentInputToken = t.text;
 				}
@@ -118,37 +133,34 @@ public class CalculatorLogic : MonoBehaviour {
 
 	private void ToRPN() {
 		string token;
-		double number;
 
 		while (InputQueue.Count > 0) {
 			token = InputQueue.Dequeue();
 
-			if (double.TryParse(token, out number)) {
-				OutputQueue.Enqueue(token);
-			}
-
 			if (IsOperator(token)) {
 				while ((SymbolStack.Count > 0) && IsOperator(SymbolStack.Peek())) {
-					//since all supported operators are left associative, i'm going to skip this check
-					if (ComparePrecedence(token, SymbolStack.Peek()) <= 0) {
+					//since all supported operators are left associative, i'm going to skip the associative check
+					if (IsLessThanOrEqualPrecedence()) {
 						OutputQueue.Enqueue(SymbolStack.Pop());
-						break;
+						continue;
 					}
+					break;
 				}
 
 				SymbolStack.Push(token);
 			}
-
-			if (token == "(") {
+			else if (token == "(") {
 				SymbolStack.Push(token);
 			}
-
-			if (token == ")") {
+			else if (token == ")") {
 				while ((SymbolStack.Count > 0) && (SymbolStack.Peek() != "(")) {
 					OutputQueue.Enqueue(SymbolStack.Pop());
 				}
 
 				SymbolStack.Pop();
+			}
+			else {
+				OutputQueue.Enqueue(token);
 			}
 		}
 
@@ -160,6 +172,10 @@ public class CalculatorLogic : MonoBehaviour {
 	private double Calculate() {
 		Stack<string> calcStack = new Stack<string> ();
 		string token;
+		Debug.Log (OutputQueue.Count);
+		foreach (string s in OutputQueue) {
+			Debug.Log(s);
+		}
 
 		while (OutputQueue.Count > 0) {
 			token = OutputQueue.Dequeue();
@@ -169,7 +185,9 @@ public class CalculatorLogic : MonoBehaviour {
 			}
 			else {
 				//pop top two tokens
+				//Debug.Log(calcStack.Peek());
 				double d2 = ConvertToDouble(calcStack.Pop());
+				//Debug.Log(calcStack.Peek());
 				double d1 = ConvertToDouble(calcStack.Pop());
 
 				double result = token.CompareTo("+") == 0 ? d1 + d2 :
@@ -214,17 +232,17 @@ public class CalculatorLogic : MonoBehaviour {
 		int right = 0;
 
 		if (token == "*" || token == "/" || token == "%") {
-			left = 0;
+			left = 1;
 		}
 		else {
-			left = 1;
+			left = 0;
 		}
 
 		if (top == "*" || top == "/" || top == "%") {
-			right = 0;
+			right = 1;
 		}
 		else {
-			right = 1;
+			right = 0;
 		}
 
 		return right - left;
