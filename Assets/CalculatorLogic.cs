@@ -1,57 +1,100 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.UI;
 
 public class CalculatorLogic : MonoBehaviour {
 
+	public const string DefaultInputBoxText = "Input Your Stuff";
+	public const string DefaultHistoryBoxText = "";
+
 	public Text InputBox;
 	public Text HistoryBox;
 
+	private Stack<string> ParserStack;
+	private Queue<string> InputQueue;
+
+	private string currentInputToken;
+
 	void Start() {
+		if (InputBox.gameObject != null) {
+			InputBox.text = DefaultInputBoxText;
+		}
+		else {
+			Debug.Log("InputBox object not assigned!");
+		}
+
+		if (HistoryBox.gameObject != null) {
+			HistoryBox.text = DefaultHistoryBoxText;
+		}
+		else {
+			Debug.Log("HistoryBox object not assigned!");
+		}
+
+		ParserStack = new Stack<string> ();
+		InputQueue = new Queue<string> ();
+		currentInputToken = string.Empty;
 	}
 
-	public void On0ButtonClicked() {
+	public void OnButtonClicked(Text t) {
+		if (t.text == "=") {
+
+		}
+		else {
+			switch (t.text) {
+
+			case "+":
+			case "-":
+			case "*":
+			case "/":
+			case "%":
+				InputQueue.Enqueue(currentInputToken);
+				InputQueue.Enqueue(t.text);
+				currentInputToken = string.Empty;
+				break;
+			case "+/-":
+				currentInputToken = (!(currentInputToken.StartsWith("-"))) 
+					? ("-" + currentInputToken) : (currentInputToken.Substring(1));
+				break;
+			case "C":
+				currentInputToken = string.Empty;
+				InputQueue.Clear();
+				InputBox.text = string.Empty;
+				break;
+			case "AC":
+				currentInputToken = string.Empty;
+				InputQueue.Clear();
+				InputBox.text = string.Empty;
+				HistoryBox.text = string.Empty;
+				break;
+			default:
+				currentInputToken = currentInputToken + t.text;
+				break;
+			}
+
+			InputBox.text = currentInputToken;
+		}
 	}
-	public void On1ButtonClicked() {
-	}
-	public void On2ButtonClicked() {
-	}
-	public void On3ButtonClicked() {
-	}
-	public void On4ButtonClicked() {
-	}
-	public void On5ButtonClicked() {
-	}
-	public void On6ButtonClicked() {
-	}
-	public void On7ButtonClicked() {
-	}
-	public void On8ButtonClicked() {
-	}
-	public void On9ButtonClicked() {
-	}
-	public void OnEqualButtonClicked() {
-	}
-	public void OnDecimalButtonClicked() {
-	}
-	public void OnAddButtonClicked() {
-	}
-	public void OnSubtractButtonClicked() {
-	}
-	public void OnDivideButtonClicked() {
-	}
-	public void OnMultiplyButtonClicked() {
-	}
-	public void OnModuloButtonClicked() {
-	}
-	public void OnClearButtonClicked() {
-	}
-	public void OnAllClearButtonClicked() {
-	}
-	public void OnOpenBracketButtonClicked() {
-	}
-	public void OnCloseBracketButtonClicked() {
-	}
-	public void OnPlusMinusButtonClicked() {
+
+	private void Calculate() {
+		string token;
+
+		while (InputQueue.Count > 0) {
+			token = InputQueue.Dequeue();
+
+			switch (token) {
+
+			case "+":
+			case "-":
+			case "*":
+			case "/":
+			case "%":
+				break;
+			default:
+				ParserStack.Push(token);
+				break;
+			}
+		}
 	}
 }
