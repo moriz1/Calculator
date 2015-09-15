@@ -51,6 +51,8 @@ public class CalculatorLogic : MonoBehaviour {
 			case "*":
 			case "/":
 			case "%":
+			case "(":
+			case ")":
 				if (t.text == "SUBSTRACT") {
 					t.text = "-";
 				}
@@ -61,6 +63,7 @@ public class CalculatorLogic : MonoBehaviour {
 				InputQueue.Enqueue(t.text);
 				currentInputToken = string.Empty;
 				break;
+
 			case "+/-":
 				currentInputToken = (!(currentInputToken.StartsWith("-"))) 
 					? ("-" + currentInputToken) : (currentInputToken.Substring(1));
@@ -69,6 +72,7 @@ public class CalculatorLogic : MonoBehaviour {
 				currentInputToken = (!(currentInputToken.Contains(".")))
 					? (currentInputToken + ".") : (currentInputToken);
 				break;
+
 			case "C":
 				currentInputToken = DefaultInputBoxText;
 				InputQueue.Clear();
