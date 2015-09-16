@@ -8,8 +8,8 @@ using UnityEngine.UI;
 
 public class CalculatorLogic : MonoBehaviour {
 
-	public const string DefaultInputBoxText = "0";
-	public const string DefaultHistoryBoxText = "";
+	public const string DEFAULT_INPUTBOX_TEXT = "0";
+	public const string DEFAULT_HISTORYBOX_TEXT = "";
 
 	public Text InputBox;
 	public Text HistoryBox;
@@ -24,14 +24,14 @@ public class CalculatorLogic : MonoBehaviour {
 
 	void Start() {
 		if (InputBox.gameObject != null) {
-			InputBox.text = DefaultInputBoxText;
+			InputBox.text = DEFAULT_INPUTBOX_TEXT;
 		}
 		else {
 			Debug.Log("InputBox object not assigned!");
 		}
 
 		if (HistoryBox.gameObject != null) {
-			HistoryBox.text = DefaultHistoryBoxText;
+			HistoryBox.text = DEFAULT_HISTORYBOX_TEXT;
 		}
 		else {
 			Debug.Log("HistoryBox object not assigned!");
@@ -41,7 +41,7 @@ public class CalculatorLogic : MonoBehaviour {
 		InputQueue = new Queue<string> ();
 		OutputQueue = new Queue<string> ();
 
-		currentInputToken = DefaultInputBoxText;
+		currentInputToken = DEFAULT_INPUTBOX_TEXT;
 	}
 
 	public void OnButtonClicked(Text t) {
@@ -49,20 +49,31 @@ public class CalculatorLogic : MonoBehaviour {
 			if (InputQueue.Count > 0) {
 				InputQueue.Enqueue(currentInputToken);
 
-				ToRPN();
+				RemoveBlanks();
 
-				double answer = Calculate();
+				if (!IsValidInputQueue()) {
+					HistoryBox.text = HistoryBox.text + InputBox.text + "\n" + "= NOT VALID INPUT\n";
+					InputBox.text = string.Empty + "NOT VALID INPUT";
 
-				HistoryBox.text = HistoryBox.text + InputBox.text + "\n" + "= " + answer + "\n";
-				InputBox.text = string.Empty + answer;
-
-				InputQueue.Clear();
-				OutputQueue.Clear();
-				SymbolStack.Clear();
-
-				currentInputToken = answer.ToString();
-				InputQueue.Enqueue(currentInputToken);
-
+					InputQueue.Clear();
+					OutputQueue.Clear();
+					SymbolStack.Clear();
+				}
+				else {
+					ToRPN();
+					
+					double answer = Calculate();
+					
+					HistoryBox.text = HistoryBox.text + InputBox.text + "\n" + "= " + answer + "\n";
+					InputBox.text = string.Empty + answer;
+					
+					InputQueue.Clear();
+					OutputQueue.Clear();
+					SymbolStack.Clear();
+					
+					currentInputToken = answer.ToString();
+					InputQueue.Enqueue(currentInputToken);
+				}
 				equalPressed = true;
 			}
 		}
@@ -76,6 +87,11 @@ public class CalculatorLogic : MonoBehaviour {
 			case "%":
 			case "(":
 			case ")":
+				//push current accumulated input into InputQueue
+				InputQueue.Enqueue(currentInputToken);
+
+				//for some reason, Unity doesn't handle "-" very well
+				//this logic appends the operator into history, and pushes it into InputQueue
 				if (t.text == "SUBSTRACT") {
 					HistoryBox.text = HistoryBox.text + currentInputToken + "-";
 					InputQueue.Enqueue("-");
@@ -85,9 +101,9 @@ public class CalculatorLogic : MonoBehaviour {
 					InputQueue.Enqueue(t.text);
 				}
 
-				InputQueue.Enqueue(currentInputToken);
+				//clear currentInputToken
 				currentInputToken = string.Empty;
-				InputBox.text = DefaultInputBoxText;
+				InputBox.text = DEFAULT_INPUTBOX_TEXT;
 
 				equalPressed = false;
 				break;
@@ -102,21 +118,22 @@ public class CalculatorLogic : MonoBehaviour {
 				break;
 
 			case "C":
-				currentInputToken = DefaultInputBoxText;
-				InputQueue.Clear();
-				InputBox.text = DefaultInputBoxText;
+				currentInputToken = DEFAULT_INPUTBOX_TEXT;
+				//InputQueue.Clear();
+				InputBox.text = DEFAULT_INPUTBOX_TEXT;
 				break;
 			case "AC":
-				currentInputToken = DefaultInputBoxText;
+				currentInputToken = DEFAULT_INPUTBOX_TEXT;
 				InputQueue.Clear();
-				InputBox.text = DefaultInputBoxText;
+				InputBox.text = DEFAULT_INPUTBOX_TEXT;
 				HistoryBox.text = string.Empty;
 				break;
 			default:
 				if (equalPressed) {
 					InputQueue.Clear();
-					currentInputToken = DefaultInputBoxText;
-					InputBox.text = DefaultInputBoxText;
+					currentInputToken = DEFAULT_INPUTBOX_TEXT;
+					InputBox.text = DEFAULT_INPUTBOX_TEXT;
+					equalPressed = false;
 				}
 
 				if ((currentInputToken.Length == 1) && (currentInputToken.StartsWith("0"))) {
@@ -133,16 +150,12 @@ public class CalculatorLogic : MonoBehaviour {
 	}
 
 	private void ToRPN() {
-		string token;
-
-		while (InputQueue.Count > 0) {
-			token = InputQueue.Dequeue();
+		foreach (string token in InputQueue) {
 
 			if (IsOperator(token)) {
 				while ((SymbolStack.Count > 0) && IsOperator(SymbolStack.Peek())) {
-					Debug.Log(IsLessThanOrEqualPrecedence());
 					//since all supported operators are left associative, i'm going to skip the associative check
-					if (IsLessThanOrEqualPrecedence()) {
+					if (ComparePrecedence(token, SymbolStack.Peek()) <= 0) {
 						OutputQueue.Enqueue(SymbolStack.Pop());
 						continue;
 					}
@@ -155,7 +168,7 @@ public class CalculatorLogic : MonoBehaviour {
 				SymbolStack.Push(token);
 			}
 			else if (token == ")") {
-				while ((SymbolStack.Count > 0) && (SymbolStack.Peek() != "(")) {
+				while (SymbolStack.Count > 0 && (SymbolStack.Peek() != "(")) {
 					OutputQueue.Enqueue(SymbolStack.Pop());
 				}
 
@@ -166,34 +179,80 @@ public class CalculatorLogic : MonoBehaviour {
 			}
 		}
 
-		foreach (string s in SymbolStack) {
-			Debug.Log(s);
-		}
-
 		while (SymbolStack.Count > 0) {
 			OutputQueue.Enqueue(SymbolStack.Pop());
 		}
 	}
 
-	private double Calculate() {
-		Stack<string> calcStack = new Stack<string> ();
-		string token;
+	//my input parser is unfortunately adding a blank token before every bracket
+	//if i have more time, i'd go back and clean it up. for now, i'll settle for
+	//simply removing them after the fact.
+	private void RemoveBlanks() {
+		Queue<string> tempQueue = new Queue<string> ();
 
-		foreach (string s in SymbolStack) {
-			Debug.Log(s);
+		//checks each token in InputQueue. If the token is not blank, add to temp
+		foreach (string token in InputQueue) {
+			if (token.Length > 0) {
+				tempQueue.Enqueue(token);
+			}
 		}
 
-		while (OutputQueue.Count > 0) {
-			token = OutputQueue.Dequeue();
+		//replace InputQueue with temp
+		InputQueue.Clear ();
+		InputQueue = tempQueue;
+	}
+
+	//this checks whether the input queue is valid or not. ie, it checks to see if
+	//the input is in proper infix notation or not.
+	private bool IsValidInputQueue() {
+		//this keeps track of brackets
+		int currentBracketLevel = 0;
+		//temp list for storing a bracket-less set of tokens for further evaluation
+		List<string> tempList = new List<string> ();
+
+		foreach (string token in InputQueue) {
+			if (token == "(") {
+				currentBracketLevel++;
+			}
+			else if (token == ")") {
+				currentBracketLevel--;
+			}
+			//otherwise, build tempList
+			else {
+				tempList.Add(token);
+			}
+		}
+
+		//evaluate brackets. if the level is anything other than 0, we've got a mismatch
+		if (currentBracketLevel != 0) {
+			return false;
+		}
+
+		if ((IsOperator(tempList[0])) || (IsOperator(tempList[tempList.Count-1]))) {
+			return false;
+		}
+
+		for (int i = 1; i < tempList.Count-1; i++) {
+			if ((IsOperator(tempList[i])) && 
+			    ((IsOperator(tempList[i-1])) || (IsOperator(tempList[i+1])))) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private double Calculate() {
+		Stack<string> calcStack = new Stack<string> ();
+
+		foreach (string token in OutputQueue) {
 
 			if (!IsOperator(token)) {
 				calcStack.Push(token);
 			}
 			else {
 				//pop top two tokens
-				//Debug.Log(calcStack.Peek());
 				double d2 = ConvertToDouble(calcStack.Pop());
-				//Debug.Log(calcStack.Peek());
 				double d1 = ConvertToDouble(calcStack.Pop());
 
 				double result = token.CompareTo("+") == 0 ? d1 + d2 :
@@ -223,35 +282,25 @@ public class CalculatorLogic : MonoBehaviour {
 		}
 	}
 
-	private bool IsLessThanOrEqualPrecedence() {
-		if ((SymbolStack.Peek () == "*") || (SymbolStack.Peek () == "/")
-			|| (SymbolStack.Peek () == "%")) {
-
-			return true;
-		}
-
-		return false;
-	}
-
 	private int ComparePrecedence(string token, string top) {
 		int left = 0;
 		int right = 0;
 
 		if (token == "*" || token == "/" || token == "%") {
-			left = 1;
+			left = 3;
 		}
 		else {
-			left = 0;
+			left = 2;
 		}
 
 		if (top == "*" || top == "/" || top == "%") {
-			right = 1;
+			right = 3;
 		}
 		else {
-			right = 0;
+			right = 2;
 		}
 
-		return right - left;
+		return left - right;
 	}
 
 	private double ConvertToDouble(string token) {

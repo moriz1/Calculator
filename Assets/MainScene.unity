@@ -2648,10 +2648,10 @@ RectTransform:
   - {fileID: 903953094}
   m_Father: {fileID: 1964213786}
   m_RootOrder: 0
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -128.020004}
-  m_SizeDelta: {x: -4, y: -262.049988}
+  m_AnchorMin: {x: .5, y: .5}
+  m_AnchorMax: {x: .5, y: .5}
+  m_AnchoredPosition: {x: 0, y: -129.020004}
+  m_SizeDelta: {x: 324, y: 319.950012}
   m_Pivot: {x: .5, y: .5}
 --- !u!1 &1375064949
 GameObject:
@@ -3114,10 +3114,10 @@ RectTransform:
   - {fileID: 1837877704}
   m_Father: {fileID: 1964213786}
   m_RootOrder: 1
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 160.479996}
-  m_SizeDelta: {x: -4, y: -324.959991}
+  m_AnchorMin: {x: .5, y: .5}
+  m_AnchorMax: {x: .5, y: .5}
+  m_AnchoredPosition: {x: 0, y: 161.479996}
+  m_SizeDelta: {x: 324, y: 257.040009}
   m_Pivot: {x: .5, y: .5}
 --- !u!114 &1440826962
 MonoBehaviour:
@@ -3387,7 +3387,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Type Your Prayers
+  m_Text: INPUT
 --- !u!222 &1496167824
 CanvasRenderer:
   m_ObjectHideFlags: 0
