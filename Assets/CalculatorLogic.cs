@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
 using System;
-//using System.Text;
-//using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
@@ -44,6 +42,7 @@ public class CalculatorLogic : MonoBehaviour {
 		currentInputToken = DEFAULT_INPUTBOX_TEXT;
 	}
 
+	//all buttons trigger this function
 	public void OnButtonClicked(Text t) {
 		if (t.text == "EQUAL") {
 			if (InputQueue.Count > 0) {
@@ -80,6 +79,7 @@ public class CalculatorLogic : MonoBehaviour {
 		else {
 			switch (t.text) {
 
+				//handle operators and brackets
 			case "+":
 			case "SUBSTRACT":
 			case "*":
@@ -108,6 +108,7 @@ public class CalculatorLogic : MonoBehaviour {
 				equalPressed = false;
 				break;
 
+				//other inputs
 			case "+/-":
 				currentInputToken = (!(currentInputToken.StartsWith("-"))) 
 					? ("-" + currentInputToken) : (currentInputToken.Substring(1));
@@ -128,6 +129,8 @@ public class CalculatorLogic : MonoBehaviour {
 				InputBox.text = DEFAULT_INPUTBOX_TEXT;
 				HistoryBox.text = string.Empty;
 				break;
+
+				//numbers
 			default:
 				if (equalPressed) {
 					InputQueue.Clear();
@@ -149,6 +152,7 @@ public class CalculatorLogic : MonoBehaviour {
 		}
 	}
 
+	//converts input from infix notation to RPN
 	private void ToRPN() {
 		foreach (string token in InputQueue) {
 
@@ -268,6 +272,7 @@ public class CalculatorLogic : MonoBehaviour {
 		return ConvertToDouble(calcStack.Pop());
 	}
 
+	//helper functions
 	private bool IsOperator(string token) {
 		switch (token) {
 			
