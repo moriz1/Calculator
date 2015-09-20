@@ -173,7 +173,9 @@ public class CalculatorLogic : MonoBehaviour {
 			
 			double answer = Calculate();
 			
-			HistoryBox.text = HistoryBox.text + InputBox.text + "\n" + "= " + answer + "\n";
+			HistoryBox.text = HistoryBox.text + 
+				(((currentInputToken == string.Empty) && (InputBox.text == "0")) ? 
+				 string.Empty : currentInputToken) + "\n" + "= " + answer + "\n";
 			InputBox.text = string.Empty + answer;
 			
 			InputQueue.Clear();
