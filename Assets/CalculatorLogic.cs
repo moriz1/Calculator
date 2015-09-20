@@ -160,10 +160,6 @@ public class CalculatorLogic : MonoBehaviour {
 			InputQueue.Enqueue(currentInputToken);
 		}
 
-		foreach (string s in InputQueue) {
-			Debug.Log(s);
-		}
-
 		if (!IsValidInputQueue()) {
 			HistoryBox.text = HistoryBox.text + InputBox.text + "\n" + "= NOT VALID INPUT\n";
 			InputBox.text = string.Empty + "NOT VALID INPUT";
@@ -229,24 +225,6 @@ public class CalculatorLogic : MonoBehaviour {
 		while (SymbolStack.Count > 0) {
 			OutputQueue.Enqueue(SymbolStack.Pop());
 		}
-	}
-
-	//my input parser is unfortunately adding a blank token before every bracket
-	//if i have more time, i'd go back and clean it up. for now, i'll settle for
-	//simply removing them after the fact.
-	private void RemoveBlanks() {
-		Queue<string> tempQueue = new Queue<string> ();
-
-		//checks each token in InputQueue. If the token is not blank, add to temp
-		foreach (string token in InputQueue) {
-			if (token.Length > 0) {
-				tempQueue.Enqueue(token);
-			}
-		}
-
-		//replace InputQueue with temp
-		InputQueue.Clear ();
-		InputQueue = tempQueue;
 	}
 
 	//this checks whether the input queue is valid or not. ie, it checks to see if
