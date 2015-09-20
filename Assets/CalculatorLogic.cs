@@ -42,114 +42,153 @@ public class CalculatorLogic : MonoBehaviour {
 		currentInputToken = DEFAULT_INPUTBOX_TEXT;
 	}
 
-	//all buttons trigger this function
-	public void OnButtonClicked(Text t) {
-		if (t.text == "EQUAL") {
-			if (InputQueue.Count > 0) {
-				InputQueue.Enqueue(currentInputToken);
+	private void OnButtonClicked(string action) {
+		switch (action) {
+		case "EQUAL":
+			EqualHandler();
+			break;
+		case "C":
+		case "AC":
+			FunctionHandler(action);
+			break;
 
-				RemoveBlanks();
+		case "+":
+		case "SUBSTRACT":
+		case "*":
+		case "/":
+		case "%":
+		case "(":
+		case ")":
+			OperationHandler(action);
+			break;
 
-				if (!IsValidInputQueue()) {
-					HistoryBox.text = HistoryBox.text + InputBox.text + "\n" + "= NOT VALID INPUT\n";
-					InputBox.text = string.Empty + "NOT VALID INPUT";
+		default:
+			NumberHandler(action);
+			break;
+		}
+	}
 
-					InputQueue.Clear();
-					OutputQueue.Clear();
-					SymbolStack.Clear();
-				}
-				else {
-					ToRPN();
-					
-					double answer = Calculate();
-					
-					HistoryBox.text = HistoryBox.text + InputBox.text + "\n" + "= " + answer + "\n";
-					InputBox.text = string.Empty + answer;
-					
-					InputQueue.Clear();
-					OutputQueue.Clear();
-					SymbolStack.Clear();
-					
-					currentInputToken = answer.ToString();
-					InputQueue.Enqueue(currentInputToken);
-				}
-				equalPressed = true;
+	//handles number buttons, +/-, decimal
+	private void NumberHandler(string n) {
+		switch (n) {
+		case "+/-":
+			currentInputToken = (!(currentInputToken.StartsWith("-"))) 
+				? ("-" + currentInputToken) : (currentInputToken.Substring(1));
+			break;
+		case "D":
+			currentInputToken = (!(currentInputToken.Contains(".")))
+				? (currentInputToken + ".") : (currentInputToken);
+			break;
+		default:
+			if (equalPressed) {
+				InputQueue.Clear();
+				currentInputToken = DEFAULT_INPUTBOX_TEXT;
+				InputBox.text = DEFAULT_INPUTBOX_TEXT;
+				equalPressed = false;
 			}
+
+			//check if currentInputToken is 0 or empty. if not, append n. otherwise, currentInputToken = n
+			currentInputToken = ((currentInputToken == DEFAULT_INPUTBOX_TEXT) || (currentInputToken.Length == 0))
+				? (currentInputToken = n) : (currentInputToken + n);
+			break;
+		}
+
+		InputBox.text = currentInputToken;
+	}
+
+	//handles +, -, *, /, %, (, )
+	private void OperationHandler(string o) {
+		equalPressed = false;
+
+		//flush currentInputToken to InputQueue if there's anything to flush
+		if (currentInputToken.Length > 0) {
+			InputQueue.Enqueue(currentInputToken);
+		}
+
+		//handle operators
+		switch (o) {
+		case "(":
+			//check if the last input is a number. if it is, push a multiply token into queue first.
+			//this allows 2(3+4)=14 as a valid input. previously, this would return 7.
+			double d = 0.0;
+			if (double.TryParse(currentInputToken, out d)) {
+				InputQueue.Enqueue("*");
+			}
+
+			HistoryBox.text = HistoryBox.text + currentInputToken + o;
+			InputQueue.Enqueue(o);
+			break;
+		case "+":
+		case "*":
+		case "/":
+		case "%":
+		case ")":
+			HistoryBox.text = HistoryBox.text + currentInputToken + o;
+			InputQueue.Enqueue(o);
+			break;
+
+			//this is just for subtraction, because Unity can't seem to handle "-"
+		default:
+			HistoryBox.text = HistoryBox.text + currentInputToken + "-";
+			InputQueue.Enqueue("-");
+			break;
+		}
+
+		//clear currentInputToken and reset InputBox
+		currentInputToken = string.Empty;
+		InputBox.text = DEFAULT_INPUTBOX_TEXT;
+
+		equalPressed = false;
+	}
+
+	//handles C, AC
+	private void FunctionHandler(string f) {
+		if (f == "AC") {
+			InputQueue.Clear();
+			HistoryBox.text = string.Empty;
+		}
+
+		currentInputToken = string.Empty;
+		InputBox.text = DEFAULT_INPUTBOX_TEXT;
+	}
+
+	//start calculations
+	private void EqualHandler() {
+		//har har, very funny
+		double d = 0.0;
+		if (double.TryParse(currentInputToken, out d) || (currentInputToken == ")")) {
+			InputQueue.Enqueue(currentInputToken);
+		}
+
+		if (!IsValidInputQueue()) {
+			HistoryBox.text = HistoryBox.text + InputBox.text + "\n" + "= NOT VALID INPUT\n";
+			InputBox.text = string.Empty + "NOT VALID INPUT";
+			
+			InputQueue.Clear();
+			OutputQueue.Clear();
+			SymbolStack.Clear();
 		}
 		else {
-			switch (t.text) {
-
-				//handle operators and brackets
-			case "+":
-			case "SUBSTRACT":
-			case "*":
-			case "/":
-			case "%":
-			case "(":
-			case ")":
-				//push current accumulated input into InputQueue
-				InputQueue.Enqueue(currentInputToken);
-
-				//for some reason, Unity doesn't handle "-" very well
-				//this logic appends the operator into history, and pushes it into InputQueue
-				if (t.text == "SUBSTRACT") {
-					HistoryBox.text = HistoryBox.text + currentInputToken + "-";
-					InputQueue.Enqueue("-");
-				}
-				else {
-					HistoryBox.text = HistoryBox.text + currentInputToken + t.text;
-					InputQueue.Enqueue(t.text);
-				}
-
-				//clear currentInputToken
-				currentInputToken = string.Empty;
-				InputBox.text = DEFAULT_INPUTBOX_TEXT;
-
-				equalPressed = false;
-				break;
-
-				//other inputs
-			case "+/-":
-				currentInputToken = (!(currentInputToken.StartsWith("-"))) 
-					? ("-" + currentInputToken) : (currentInputToken.Substring(1));
-				break;
-			case "D":
-				currentInputToken = (!(currentInputToken.Contains(".")))
-					? (currentInputToken + ".") : (currentInputToken);
-				break;
-
-			case "C":
-				currentInputToken = DEFAULT_INPUTBOX_TEXT;
-				//InputQueue.Clear();
-				InputBox.text = DEFAULT_INPUTBOX_TEXT;
-				break;
-			case "AC":
-				currentInputToken = DEFAULT_INPUTBOX_TEXT;
-				InputQueue.Clear();
-				InputBox.text = DEFAULT_INPUTBOX_TEXT;
-				HistoryBox.text = string.Empty;
-				break;
-
-				//numbers
-			default:
-				if (equalPressed) {
-					InputQueue.Clear();
-					currentInputToken = DEFAULT_INPUTBOX_TEXT;
-					InputBox.text = DEFAULT_INPUTBOX_TEXT;
-					equalPressed = false;
-				}
-
-				if ((currentInputToken.Length == 1) && (currentInputToken.StartsWith("0"))) {
-					currentInputToken = t.text;
-				}
-				else {
-					currentInputToken = currentInputToken + t.text;
-				}
-				break;
-			}
-
-			InputBox.text = currentInputToken;
+			ToRPN();
+			
+			double answer = Calculate();
+			
+			HistoryBox.text = HistoryBox.text + InputBox.text + "\n" + "= " + answer + "\n";
+			InputBox.text = string.Empty + answer;
+			
+			InputQueue.Clear();
+			OutputQueue.Clear();
+			SymbolStack.Clear();
+			
+			currentInputToken = answer.ToString();
 		}
+
+		equalPressed = true;
+	}
+
+	//all buttons trigger this function
+	public void OnButtonClicked(Text t) {
+		OnButtonClicked (t.text);
 	}
 
 	//converts input from infix notation to RPN
@@ -186,24 +225,6 @@ public class CalculatorLogic : MonoBehaviour {
 		while (SymbolStack.Count > 0) {
 			OutputQueue.Enqueue(SymbolStack.Pop());
 		}
-	}
-
-	//my input parser is unfortunately adding a blank token before every bracket
-	//if i have more time, i'd go back and clean it up. for now, i'll settle for
-	//simply removing them after the fact.
-	private void RemoveBlanks() {
-		Queue<string> tempQueue = new Queue<string> ();
-
-		//checks each token in InputQueue. If the token is not blank, add to temp
-		foreach (string token in InputQueue) {
-			if (token.Length > 0) {
-				tempQueue.Enqueue(token);
-			}
-		}
-
-		//replace InputQueue with temp
-		InputQueue.Clear ();
-		InputQueue = tempQueue;
 	}
 
 	//this checks whether the input queue is valid or not. ie, it checks to see if
