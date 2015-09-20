@@ -42,6 +42,62 @@ public class CalculatorLogic : MonoBehaviour {
 		currentInputToken = DEFAULT_INPUTBOX_TEXT;
 	}
 
+	private void OnButtonClicked(string action) {
+		switch (action) {
+		case "EQUAL":
+			EqualHandler();
+			break;
+		case "C":
+		case "AC":
+			FunctionHandler(action);
+			break;
+
+		case "+":
+		case "SUBSTRACT":
+		case "*":
+		case "/":
+		case "%":
+		case "(":
+		case ")":
+			OperationHandler(action);
+			break;
+
+		default:
+			NumberHandler(action);
+			break;
+		}
+	}
+
+	//handles number buttons, +/-, decimal
+	private void NumberHandler(string n) {
+		switch (n) {
+		case "+/-":
+			currentInputToken = (!(currentInputToken.StartsWith("-"))) 
+				? ("-" + currentInputToken) : (currentInputToken.Substring(1));
+			break;
+		case "D":
+			currentInputToken = (!(currentInputToken.Contains(".")))
+				? (currentInputToken + ".") : (currentInputToken);
+			break;
+		default:
+			currentInputToken = (currentInputToken.StartsWith("0"))
+				? (currentInputToken = n) : (currentInputToken = currentInputToken + n);
+			break;
+		}
+	}
+
+	//handles +, -, *, /, %, (, )
+	private void OperationHandler(string o) {
+	}
+
+	//handles C, AC
+	private void FunctionHandler(string f) {
+	}
+
+	//start calculations
+	private void EqualHandler() {
+	}
+
 	//all buttons trigger this function
 	public void OnButtonClicked(Text t) {
 		if (t.text == "EQUAL") {
